@@ -3,6 +3,9 @@ import datetime
 import string
 from ctypes import windll
 import subprocess
+from contextlib import contextmanager
+import win32wnet
+from win32netcon import RESOURCETYPE_DISK as DISK
 
 
 def purge_directory(path, days):
@@ -36,17 +39,25 @@ def get_free_drive_letter():
     return list(letters - used)[-1]
 
 
-def map_drive(server, share, user=None, password=None):
+def disconnect_drive(letter):
+    """Disconnects a mapped drive"""
+    win32wnet.WNetCancelConnection2(letter, 1, 1)
+
+def connect_drive(server, share, user=None, password=None):
     """Map a drive to the given windows share, optionally using username
     and password"""
-    letter = get_free_drive_letter()
-    command = r'net use %s: \\%s\%s' % (letter, server, share)
-    if user and password:
-        command += r' /u:%s %s' % (user, password)
-    subprocess.check_call(command.split(' '), stdout=None, stderr=None)
+    letter = get_free_drive_letter() + ':'
+    sharename = r'\\%s\%s' % (server, share)
+    win32wnet.WNetAddConnection2(DISK, letter, sharename, None, user,
+                                 password, 0)
     return letter
 
 
-def disconnect_drive(letter):
-    command = r'net use /DEL %s:' % letter
-    subprocess.check_call(command.split(' '), stdout=None, stderr=None)
+@contextmanager
+def map_drive(server, share, user=None, password=None):
+    """Maps a drive in a with-block, closing it at block completion"""
+    try:
+        letter = connect_drive(server, share, user, password)
+        yield letter
+    finally:
+        disconnect_drive(letter)
