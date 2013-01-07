@@ -11,7 +11,7 @@ with open('LICENSE') as f:
 
 setup(
     name='sysutils',
-    version='0.0.1',
+    version='0.0.2',
     description='Simple helpers for systems managements',
     long_description=readme,
     author='Jeremy Axmacher',
@@ -20,4 +20,7 @@ setup(
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     py_modules=['sysutils'],
+    install_requires=[
+        'pywin32>=216',
+    ],
 )
