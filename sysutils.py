@@ -43,21 +43,21 @@ def disconnect_drive(letter):
     """Disconnects a mapped drive"""
     win32wnet.WNetCancelConnection2(letter, 1, 1)
 
-def connect_drive(server, share, user=None, password=None):
+
+def connect_drive(sharename, user=None, password=None, letter=None):
     """Map a drive to the given windows share, optionally using username
     and password"""
-    letter = get_free_drive_letter() + ':'
-    sharename = r'\\%s\%s' % (server, share)
+    letter = letter or get_free_drive_letter() + ':'
     win32wnet.WNetAddConnection2(DISK, letter, sharename, None, user,
                                  password, 0)
     return letter
 
 
 @contextmanager
-def map_drive(server, share, user=None, password=None):
+def map_drive(sharename, user=None, password=None, letter=None):
     """Maps a drive in a with-block, closing it at block completion"""
     try:
-        letter = connect_drive(server, share, user, password)
+        letter = connect_drive(sharename, user, password, letter)
         yield letter
     finally:
         disconnect_drive(letter)
